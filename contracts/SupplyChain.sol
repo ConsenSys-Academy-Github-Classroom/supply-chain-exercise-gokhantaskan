@@ -4,15 +4,26 @@ pragma solidity >=0.5.16 <0.9.0;
 contract SupplyChain {
 
   // <owner>
+  address public owner;
 
   // <skuCount>
+  uint public skuCount;
 
   // <items mapping>
+  // mapping(Item => uint) public items;
 
   // <enum State: ForSale, Sold, Shipped, Received>
+  enum State { ForSale, Sold, Shipped, Received }
 
   // <struct Item: name, sku, price, state, seller, and buyer>
-  
+  struct Item {
+    string name;
+    uint sku;
+    uint price;
+    State state;
+    address payable seller;
+    address payable buyer;
+  }
   /* 
    * Events
    */
@@ -33,6 +44,10 @@ contract SupplyChain {
   // Create a modifer, `isOwner` that checks if the msg.sender is the owner of the contract
 
   // <modifier: isOwner
+  modifier isOwner (address _address) { 
+    require (msg.sender == _address, "The sender is not the owner!");
+    _;
+  }
 
   modifier verifyCaller (address _address) { 
     // require (msg.sender == _address); 
@@ -67,7 +82,9 @@ contract SupplyChain {
 
   constructor() public {
     // 1. Set the owner to the transaction sender
+    owner = msg.sender;
     // 2. Initialize the sku count to 0. Question, is this necessary?
+    skuCount = 0;
   }
 
   function addItem(string memory _name, uint _price) public returns (bool) {
@@ -84,7 +101,7 @@ contract SupplyChain {
     //  state: State.ForSale, 
     //  seller: msg.sender, 
     //  buyer: address(0)
-    //});
+    // });
     //
     //skuCount = skuCount + 1;
     // emit LogForSale(skuCount);
