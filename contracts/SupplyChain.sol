@@ -21,8 +21,8 @@ contract SupplyChain {
     uint sku;
     uint price;
     State state;
-    address seller;
-    address buyer;
+    address payable seller;
+    address payable buyer;
   }
   /* 
    * Events
@@ -32,8 +32,10 @@ contract SupplyChain {
   event LogForSale(uint _skuCount);
 
   // <LogSold event: sku arg>
+  event LogSold(uint sku);
 
   // <LogShipped event: sku arg>
+  event LogShipped(uint sku);
 
   // <LogReceived event: sku arg>
 
@@ -47,6 +49,11 @@ contract SupplyChain {
   // <modifier: isOwner
   modifier isOwner (address _address) { 
     require (msg.sender == _address, "You are not the owner!");
+    _;
+  }
+
+  modifier onlySeller (uint sku) {
+    require(msg.sender == items[sku].seller, "You are not the seller!");
     _;
   }
 
@@ -69,7 +76,7 @@ contract SupplyChain {
 
     uint _price = items[_sku].price;
     uint amountToRefund = msg.value - _price;
-    items[_sku].buyer.transfer(amountToRefund);
+    // items[_sku].buyer.transfer(amountToRefund);
   }
 
   // For each of the following modifiers, use what you learned about modifiers
@@ -83,7 +90,7 @@ contract SupplyChain {
   modifier forSale(uint _sku) {
     require(
       items[_sku].state == State.ForSale &&
-      items[_sku].skuCount != 0,
+      items[_sku].price > 0,
       "It is not for sale!"
     );
     _;
@@ -141,10 +148,16 @@ contract SupplyChain {
   //    - if the buyer paid enough, 
   //    - check the value after the function is called to make 
   //      sure the buyer is refunded any excess ether sent. 
-  // 6. call the event associated with this function!
-  function buyItem(uint sku) public payable forSale paidEnough checkValue {
+  // // 6. call the event associated with this function!
+  function buyItem(uint sku) public payable {
+    address payable seller = items[sku].seller;
+    uint price = items[sku].price;
+
     items[sku].buyer = msg.sender;
     items[sku].state = State.Sold;
+    seller.transfer(price);
+
+    emit LogSold(sku);
   }
 
   // 1. Add modifiers to check:
@@ -152,14 +165,20 @@ contract SupplyChain {
   //    - the person calling this function is the seller. 
   // 2. Change the state of the item to shipped. 
   // 3. call the event associated with this function!
-  function shipItem(uint sku) public {}
+  function shipItem(uint sku) public onlySeller(sku) {
+    items[sku].state = State.Shipped;
+
+    emit LogShipped(sku);
+  }
 
   // 1. Add modifiers to check 
   //    - the item is shipped already 
   //    - the person calling this function is the buyer. 
   // 2. Change the state of the item to received. 
   // 3. Call the event associated with this function!
-  function receiveItem(uint sku) public {}
+  function receiveItem(uint sku) public {
+    items[sku].state = State.Received;
+  }
 
   // Uncomment the following code block. it is needed to run tests
   function fetchItem(uint _sku) public view 
