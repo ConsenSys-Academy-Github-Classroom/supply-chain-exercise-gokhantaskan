@@ -38,6 +38,7 @@ contract SupplyChain {
   event LogShipped(uint sku);
 
   // <LogReceived event: sku arg>
+  event LogReceived(uint sku);
 
 
   /* 
@@ -111,6 +112,11 @@ contract SupplyChain {
     _;
   }
 
+  modifier onlyBuyer(uint sku) {
+    require(msg.sender == items[sku].buyer, "You are not the buyer!");
+    _;
+  }
+
   constructor() public {
     // 1. Set the owner to the transaction sender
     owner = msg.sender;
@@ -176,8 +182,10 @@ contract SupplyChain {
   //    - the person calling this function is the buyer. 
   // 2. Change the state of the item to received. 
   // 3. Call the event associated with this function!
-  function receiveItem(uint sku) public {
+  function receiveItem(uint sku) public onlyBuyer(sku) {
     items[sku].state = State.Received;
+
+    emit LogReceived(sku);
   }
 
   // Uncomment the following code block. it is needed to run tests
